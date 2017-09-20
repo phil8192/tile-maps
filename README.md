@@ -106,3 +106,7 @@ INTEGER OPTIMAL SOLUTION FOUND
 Time used:   0.0 secs
 Memory used: 0.2 Mb (219016 bytes)
 ```
+
+## Refs
+
+[Formulating Linear and Integer Linear Programs: A Rogues' Gallery](https://core.ac.uk/download/pdf/36730539.pdf)
