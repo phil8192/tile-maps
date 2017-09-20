@@ -85,4 +85,8 @@ model.solve()
 
 print("status:", LpStatus[model.status])
 
-# todo: show result.
+# show result.
+for _, ass in cell_assignments.items():
+    if value(ass) == 1:
+       print(ass) 
+
