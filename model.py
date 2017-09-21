@@ -1,25 +1,47 @@
 # use pulp - a python abstraction layer for linear programming modeling. 
 from pulp import *
 
+# crete
 #conf = {
-#    regions: [ { 'id': 0, 'name': 'a' },
-#               { 'id': 1, 'name': 'b' },
-#               { 'id': 2, 'name': 'c' },
-#               { 'id': 3, 'name': 
-#    
+#    'regions': [ { 'name': 'a' },
+#                 { 'name': 'b' },
+#                 { 'name': 'c' },
+#                 { 'name': 'd' } ],
+#    # diagonal of neighbourhood list
+#    'neighbours': [ (0, 1), (0, 2), (1, 2), (1, 3) ]
 #}
 
-regions = 4
-
-# neighbours (diagonal of neighbourhood list)
-# (decision variables). N_0_2 = region 0 and 2 are neighbours.
-neighbours = {
-    (0, 1): LpVariable(cat=LpBinary, name='N_0_1'),
-    (0, 2): LpVariable(cat=LpBinary, name='N_0_2'),
-    (1, 2): LpVariable(cat=LpBinary, name='N_1_2'),
-    (1, 3): LpVariable(cat=LpBinary, name='N_1_3')
+# newport
+conf = {
+    'regions': [ { 'name': 'Graig' },        # 0
+                 { 'name': 'Rogerstone' },   # 1
+                 { 'name': 'Bettws' },       # 2
+                 { 'name': 'Malpas' },       # 3
+                 { 'name': 'Shaftesbury' },  # 4
+                 { 'name': 'Caerleon' },     # 5
+                 { 'name': 'Langstone' },    # 6
+                 { 'name': 'Allt-yr-yn' },   # 7
+                 { 'name': 'St Julians' },   # 8
+                 { 'name': 'Beechwood' },    # 9
+                 { 'name': 'Alway' },        # 10
+                 { 'name': 'Ringland' },     # 11
+                 { 'name': 'Llanwern' },     # 12
+                 { 'name': 'Gaer' },         # 13
+                 { 'name': 'StowHill' },     # 14
+                 { 'name': 'Victoria' },     # 15
+                 { 'name': 'Tredegar Park'}, # 16
+                 { 'name': 'Marshfield' },   # 17
+                 { 'name': 'Liswerry' },     # 18
+                 { 'name': 'Llanwern' },     # 19
+                 { 'name': 'Pillgwenlly' } ],# 20
+    'neighbours': [ (0, 1), (0, 17), (0, 13), (17, 13), (17, 16), (17, 20), (17, 18), (1, 7), (1, 13), (1, 2), (7, 2), (7, 4), (7, 14), (13, 14), (13, 16), (16, 20), (2, 3), (2, 4), (3, 5),
+(3, 8), (3, 4), (4, 8), (4, 14), (14, 20), (14, 15), (20, 18), (8, 5), (8, 9), (8, 15), (15, 9), (15, 18), (9, 5), (9, 10), (9, 18), (10, 5), (10, 11), (10, 18), (11, 5), (11, 6), (11, 12),
+(11, 18), (5, 6), (18, 12), (19, 6) ] 
 }
 
+regions = len(conf['regions'])
+# (decision variables). N_0_2 = region 0 and 2 are neighbours.
+neighbours = {k: LpVariable(cat=LpBinary, name='N_{}_{}'.format(*k)) for k in conf['neighbours']}
 
 
 # maximise... (maybe later want to minimise or penalise non-assignments..
@@ -29,10 +51,7 @@ model += lpSum(neighbours.values())
 # subject to...
 
 # all possible assignments for regions to cells in a 3x3 matrix.
-# ASS_0_1_5 (ASS_row_col_region) means: "cell in row 0, col 1 contains region
-# 5." or "region 5 assigned to cell 0, col 1". the number of cell assignment
-# variables will then be rows*cols*regions.
-rows, cols = (3, 3)
+rows = cols = regions # worst case: all stacked on top of each other.. 
 keys = itertools.product(range(0, rows), range(0, cols), range(0, regions))
 cell_assignments = {k: LpVariable(cat=LpBinary, name='ASS_{}_{}_{}'.format(*k)) for k in keys}
 #for _, ass in cell_assignments.items():
@@ -57,8 +76,7 @@ for k, v in neighbours.items():
     possible = []
     # for each cell
     for row, col in itertools.product(range(0, rows), range(0, cols)):
-        
-# ASS_row_col for r1 neighbour (centre)
+        # ASS_row_col for r1 neighbour (centre)
         r1_cell = cell_assignments[(row, col, r1)]
         # .. and the (max) 4 N,E,S,W possible r2 neighbours
         r2_cell_neighbours = []
@@ -91,8 +109,10 @@ for k, v in neighbours.items():
 # glpsol --lp tiles.lp
 model.writeLP('tiles.lp')
 
-# do it!
-model.solve(solver=COIN_CMD(msg=True, mip=True, presolve=True, maxSeconds=60, threads=8))
+# using coin-or solver
+model.solve(solver=COIN_CMD(msg=True, mip=True, presolve=True, maxSeconds=300))
+# using glpk solver
+#model.solve()
 
 print("status:", LpStatus[model.status])
 
