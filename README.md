@@ -123,7 +123,14 @@ cd Cbc-2.9
 git clone --branch=stable/0.8 https://github.com/coin-or-tools/BuildTools/
 chmod 0700 BuildTools/get.dependencies.sh
 BuildTools/get.dependencies.sh fetch
-./configure --prefix=/usr/local
+./configure --prefix=/usr/local --enable-cbc-parallel
 make
 sudo make install
 ```
+
+verify parallel enabled
+
+```
+cbc -threads 8 -unitTest -dirMiplib=_MIPLIB3DIR_ -miplib
+```
+

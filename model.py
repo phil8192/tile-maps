@@ -3,10 +3,10 @@ from pulp import *
 
 # crete
 #conf = {
-#    'regions': [ { 'name': 'a' },
-#                 { 'name': 'b' },
-#                 { 'name': 'c' },
-#                 { 'name': 'd' } ],
+#    'regions': [ { 'name': 'aa' },
+#                 { 'name': 'bb' },
+#                 { 'name': 'cc' },
+#                 { 'name': 'dd' } ],
 #    # diagonal of neighbourhood list
 #    'neighbours': [ (0, 1), (0, 2), (1, 2), (1, 3) ]
 #}
@@ -51,7 +51,7 @@ model += lpSum(neighbours.values())
 # subject to...
 
 # all possible assignments for regions to cells in a 3x3 matrix.
-rows = cols = regions # worst case: all stacked on top of each other.. 
+rows = cols = 10 #regions # worst case: all stacked on top of each other.. 
 keys = itertools.product(range(0, rows), range(0, cols), range(0, regions))
 cell_assignments = {k: LpVariable(cat=LpBinary, name='ASS_{}_{}_{}'.format(*k)) for k in keys}
 #for _, ass in cell_assignments.items():
@@ -94,13 +94,13 @@ for k, v in neighbours.items():
             r2_cell_neighbours.append(cell_assignments[W])
         r1_N = LpVariable(cat=LpBinary, name='N_{}_{}_{}_{}'.format(r1, r2, row, col))
         # N_r1_r2_row_col is true iff r1_cell is assigned and r2 is one of the neighbours.
-        model += r1_N <= r1_cell, "REL_R1_{}_{}_{}_{}".format(r1, r2, row, col)
-        model += r1_N <= lpSum(r2_cell_neighbours), "REL_R2_{}_{}_{}_{}".format(r1, r2, row, col)
+        model += r1_N <= r1_cell, 'REL_R1_{}_{}_{}_{}'.format(r1, r2, row, col)
+        model += r1_N <= lpSum(r2_cell_neighbours), 'REL_R2_{}_{}_{}_{}'.format(r1, r2, row, col)
         possible.append(r1_N)
     # from all of the possible N_r1_r2_row_col centre and surrounding neighbour possibilities,
     # if there exists an assignment where r2 surrounds r1, then N_r1_r2 will be true (since we
     # are trying to maximise N_r1_r2 in the objective function...
-    model += v <= lpSum(possible), "REL_N_{}_{}".format(r1, r2)
+    model += v <= lpSum(possible), 'REL_N_{}_{}'.format(r1, r2)
 
 # output the model in CPLEX LP format. (for verification/debugging)
 # note that this can be solved with GNU Linear Programming Kit) for example,
@@ -110,11 +110,11 @@ for k, v in neighbours.items():
 model.writeLP('tiles.lp')
 
 # using coin-or solver
-model.solve(solver=COIN_CMD(msg=True, mip=True, presolve=True, maxSeconds=300))
+model.solve(solver=COIN_CMD(msg=True, mip=True, presolve=True, maxSeconds=1800, threads=8))
 # using glpk solver
 #model.solve()
 
-print("status:", LpStatus[model.status])
+print('status:', LpStatus[model.status])
 
 # show result.
 print()
@@ -122,16 +122,16 @@ rs = []
 for row in range(0, rows):
     rs = []
     for col in range(0, cols):
-        ass_region = ' '
+        ass_region = '  '
         #rs.append("| {} ".format(row))
         for region in range(0, regions):
             if value(cell_assignments[(row, col, region)]) == 1:
-                ass_region = region
+                ass_region = conf['regions'][region]['name'][:2].upper()
                 break
-        rs.append("| {} ".format(ass_region))
-    rs.append("|")
-    rs = "".join(rs)
-    print("-" * len(rs))
+        rs.append('| {} '.format(ass_region))
+    rs.append('|')
+    rs = ''.join(rs)
+    print('-' * len(rs))
     print(rs)
-print("-" * len(rs))
+print('-' * len(rs))
 print()
