@@ -1,6 +1,14 @@
 # use pulp - a python abstraction layer for linear programming modeling. 
 from pulp import *
 
+#conf = {
+#    regions: [ { 'id': 0, 'name': 'a' },
+#               { 'id': 1, 'name': 'b' },
+#               { 'id': 2, 'name': 'c' },
+#               { 'id': 3, 'name': 
+#    
+#}
+
 regions = 4
 
 # neighbours (diagonal of neighbourhood list)
@@ -11,6 +19,8 @@ neighbours = {
     (1, 2): LpVariable(cat=LpBinary, name='N_1_2'),
     (1, 3): LpVariable(cat=LpBinary, name='N_1_3')
 }
+
+
 
 # maximise... (maybe later want to minimise or penalise non-assignments..
 model = LpProblem('tiles', LpMaximize)
@@ -47,7 +57,8 @@ for k, v in neighbours.items():
     possible = []
     # for each cell
     for row, col in itertools.product(range(0, rows), range(0, cols)):
-        # ASS_row_col for r1 neighbour (centre)
+        
+# ASS_row_col for r1 neighbour (centre)
         r1_cell = cell_assignments[(row, col, r1)]
         # .. and the (max) 4 N,E,S,W possible r2 neighbours
         r2_cell_neighbours = []
@@ -81,12 +92,26 @@ for k, v in neighbours.items():
 model.writeLP('tiles.lp')
 
 # do it!
-model.solve()
+model.solve(solver=COIN_CMD(msg=True, mip=True, presolve=True, maxSeconds=60, threads=8))
 
 print("status:", LpStatus[model.status])
 
 # show result.
-for _, ass in cell_assignments.items():
-    if value(ass) == 1:
-       print(ass) 
-
+print()
+rs = []
+for row in range(0, rows):
+    rs = []
+    for col in range(0, cols):
+        ass_region = ' '
+        #rs.append("| {} ".format(row))
+        for region in range(0, regions):
+            if value(cell_assignments[(row, col, region)]) == 1:
+                ass_region = region
+                break
+        rs.append("| {} ".format(ass_region))
+    rs.append("|")
+    rs = "".join(rs)
+    print("-" * len(rs))
+    print(rs)
+print("-" * len(rs))
+print()

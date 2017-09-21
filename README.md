@@ -110,3 +110,20 @@ Memory used: 0.2 Mb (219016 bytes)
 ## Refs
 
 [Formulating Linear and Integer Linear Programs: A Rogues' Gallery](https://core.ac.uk/download/pdf/36730539.pdf)
+
+
+## Installing COIN-OR
+
+Cbc (Coin-or branch and cut) is an open-source mixed integer programming solver.
+It is faster than the GLPK.
+
+```
+git clone --branch=stable/2.9 https://github.com/coin-or/Cbc Cbc-2.9
+cd Cbc-2.9
+git clone --branch=stable/0.8 https://github.com/coin-or-tools/BuildTools/
+chmod 0700 BuildTools/get.dependencies.sh
+BuildTools/get.dependencies.sh fetch
+./configure --prefix=/usr/local
+make
+sudo make install
+```
