@@ -67,44 +67,65 @@ COIN-OR will be faster. Gurobi (propriatory will be fastest).
 glpsol --lp tiles.lp
 ```
 
-### Example run
+### Example run (Newport)
 
-Expect that 3 neighbourhood relations can be satisfied.
+26 of 44 possible neighbourhood relations satisfied.
 
 ```
-GLPSOL: GLPK LP/MIP Solver, v4.63
-Parameter(s) specified in the command line:
- --lp tiles.lp
-Reading problem data from 'tiles.lp'...
-89 rows, 76 columns, 316 non-zeros
-76 integer variables, all of which are binary
-183 lines were read
-GLPK Integer Optimizer, v4.63
-89 rows, 76 columns, 316 non-zeros
-76 integer variables, all of which are binary
-Preprocessing...
-40 hidden covering inequaliti(es) were detected
-89 rows, 76 columns, 316 non-zeros
-76 integer variables, all of which are binary
-Scaling...
- A: min|aij| =  1.000e+00  max|aij| =  1.000e+00  ratio =  1.000e+00
-Problem data seem to be well scaled
-Constructing initial basis...
-Size of triangular part is 89
-Solving LP relaxation...
-GLPK Simplex Optimizer, v4.63
-89 rows, 76 columns, 316 non-zeros
-      0: obj =  -0.000000000e+00 inf =   3.000e+00 (1)
-      7: obj =  -0.000000000e+00 inf =   0.000e+00 (0)
-*    56: obj =   4.000000000e+00 inf =   1.110e-16 (0)
-OPTIMAL LP SOLUTION FOUND
-Integer optimization begins...
-+    56: mip =     not found yet <=              +inf        (1; 0)
-+    71: >>>>>   3.000000000e+00 <=   4.000000000e+00  33.3% (4; 0)
-+   281: mip =   3.000000000e+00 <=     tree is empty   0.0% (0; 37)
-INTEGER OPTIMAL SOLUTION FOUND
-Time used:   0.0 secs
-Memory used: 0.2 Mb (219016 bytes)
+Result - Stopped on time limit
+
+Objective value:                26.00000000
+Lower bound:                    44.000
+Gap:                            -0.41
+Enumerated nodes:               3676
+Total iterations:               17364320
+Time (CPU seconds):             14421.75
+Time (Wallclock seconds):       2015.19
+
+Option for printingOptions changed from normal to all
+Total time (CPU seconds):       14421.77   (Wallclock seconds):       2015.23
+
+status: Not Solved
+
+-----------------------------------------
+| ST | PI |    | RO | AL |    |    |    |
+-----------------------------------------
+| GA | TR |    | BE | SH |    |    |    |
+-----------------------------------------
+| GR | MA | LI | BE | ST | VI |    |    |
+-----------------------------------------
+|    |    | AL | CA | MA |    |    |    |
+-----------------------------------------
+|    | LL | RI | LA |    |    |    |    |
+-----------------------------------------
+|    |    |    | LL |    |    |    |    |
+-----------------------------------------
+|    |    |    |    |    |    |    |    |
+-----------------------------------------
+|    |    |    |    |    |    |    |    |
+-----------------------------------------
+
+GR = Graig
+RO = Rogerstone
+BE = Bettws
+MA = Malpas
+SH = Shaftesbury
+CA = Caerleon
+LA = Langstone
+AL = Allt-yr-yn
+ST = St Julians
+BE = Beechwood
+AL = Alway
+RI = Ringland
+LL = Llanwern
+GA = Gaer
+ST = StowHill
+VI = Victoria
+TR = Tredegar Park
+MA = Marshfield
+LI = Liswerry
+LL = Llanwern
+PI = Pillgwenlly
 ```
 
 ## Refs
@@ -133,4 +154,3 @@ verify parallel enabled
 ```
 cbc -threads 8 -unitTest -dirMiplib=_MIPLIB3DIR_ -miplib
 ```
-

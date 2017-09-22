@@ -1,4 +1,5 @@
 # use pulp - a python abstraction layer for linear programming modeling. 
+import multiprocessing
 from pulp import *
 
 # crete
@@ -50,8 +51,8 @@ model += lpSum(neighbours.values())
 
 # subject to...
 
-# all possible assignments for regions to cells in a 3x3 matrix.
-rows = cols = 10 #regions # worst case: all stacked on top of each other.. 
+# all possible assignments for regions to cells matrix.
+rows = cols = 7 #regions # worst case: all stacked on top of each other.. 
 keys = itertools.product(range(0, rows), range(0, cols), range(0, regions))
 cell_assignments = {k: LpVariable(cat=LpBinary, name='ASS_{}_{}_{}'.format(*k)) for k in keys}
 #for _, ass in cell_assignments.items():
@@ -110,7 +111,8 @@ for k, v in neighbours.items():
 model.writeLP('tiles.lp')
 
 # using coin-or solver
-model.solve(solver=COIN_CMD(msg=True, mip=True, presolve=True, maxSeconds=1800, threads=8))
+threads = multiprocessing.cpu_count()
+model.solve(solver=COIN_CMD(msg=True, mip=True, presolve=True, maxSeconds=1800*threads, threads=threads))
 # using glpk solver
 #model.solve()
 
@@ -135,3 +137,6 @@ for row in range(0, rows):
     print(rs)
 print('-' * len(rs))
 print()
+
+for region in conf['regions']:
+    print('{} = {}'.format(region['name'][:2].upper(), region['name']))
