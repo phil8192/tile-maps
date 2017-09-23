@@ -112,7 +112,7 @@ model.writeLP('tiles.lp')
 
 # using coin-or solver
 threads = multiprocessing.cpu_count()
-model.solve(solver=COIN_CMD(msg=True, mip=True, presolve=True, maxSeconds=1800*threads, threads=threads))
+model.solve(solver=COIN_CMD(msg=True, mip=True, presolve=True, maxSeconds=600*threads, threads=threads))
 # using glpk solver
 #model.solve()
 
