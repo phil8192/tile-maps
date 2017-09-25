@@ -133,6 +133,14 @@ PI = Pillgwenlly
 [Formulating Linear and Integer Linear Programs: A Rogues' Gallery](https://core.ac.uk/download/pdf/36730539.pdf)
 
 
+# Dependencies
+
+## Python
+
+```
+pip3 install pulp
+```
+
 ## Installing COIN-OR
 
 Cbc (Coin-or branch and cut) is an open-source mixed integer programming solver.
