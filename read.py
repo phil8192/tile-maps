@@ -2,6 +2,7 @@ import json
 import shapely
 import shapely.geometry
 
+
 def load(src):
     with open(src, 'r') as f:
         x = f.read()
@@ -45,11 +46,32 @@ def neighbours(region_list):
             if adjacent(src, dst): 
                 n.append((i, j))
     return n
-    
+
+
+def conf(region_list, adjacency_list):
+    return dict(regions=region_list, neighbours=adjacency_list)
+
+
+def load_conf(src, region_key):
+    l = regions(src, region_key)
+    n = neighbours(l)
+    return conf(l, n)    
+
 
 if __name__ == '__main__':
     # python3 ./read.py geojson/counties.geojson Name
     import sys
     src, region_key = sys.argv[1:]
-    n = neighbours(regions(src, region_key))
-    print(n)
+    r = regions(src, region_key)
+    n = neighbours(r)
+    for i, region in enumerate(r):
+        j = 0
+        for x, y in n:
+            if i == x:
+                print('{} ({}) -> {} ({})'.format(region['s_name'], region['name'], r[y]['s_name'], r[y]['name']))
+                j += 1
+            elif i == y:
+                print('{} ({}) -> {} ({})'.format(region['s_name'], region['name'], r[x]['s_name'], r[x]['name']))
+                j += 1
+        print('{} = {} neighbours'.format(region['s_name'], j))
+    print('total relations = {}'.format(len(n)))
