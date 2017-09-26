@@ -99,7 +99,7 @@ regions = conf['regions']
 neighbours = conf['neighbours']
 
 rows = 13
-cols = 20 
+cols = 16 
 #rows = 16 
 #cols = 32
 
@@ -116,19 +116,25 @@ a = 0.999999
 best_s = ''
 i = 0
 while True:
-    i = i+1
-    if t > 0.0001:
-        t = t*a
 
     i1 = random.randint(0, rows - 1)
     j1 = random.randint(0, cols - 1)
     i2 = random.randint(0, rows - 1)
     j2 = random.randint(0, cols - 1)
-       
-    v = grid[i1][j1]
-    grid[i1][j1] = grid[i2][j2]
-    grid[i2][j2] = v
 
+    v1 = grid[i1][j1]
+    v2 = grid[i2][j2]
+
+    # dont swap empty positions...    
+    if not (v1 or v1): continue
+
+    i = i+1
+    if t > 0.0001:
+        t = t*a
+
+    grid[i1][j1] = v2
+    grid[i2][j2] = v1
+        
     score = eval_candidate_mod(grid, adj_matrix)
 
     if score > max_score:
@@ -145,7 +151,7 @@ while True:
             print(res_to_string(grid, regions))
             print('heat = {:.6f} best = {} current = {} '.format(t, max_score, score))
     else:
-        grid[i2][j2] = grid[i1][j1]
-        grid[i1][j1] = v
+        grid[i2][j2] = v1 
+        grid[i1][j1] = v2
  
 
