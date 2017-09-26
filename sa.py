@@ -15,10 +15,9 @@ def random_grid(regions, rows, cols):
 
 
 def adjacency_matrix(neighbour_tuples, regions):
-    grid = [[False]*len(regions) for i in range(0, len(regions))]
+    grid = [[0]*len(regions) for i in range(0, len(regions))]
     for i, j in neighbour_tuples:
-        grid[i][j] = True
-        #grid[j][i] = True
+        grid[i][j] = 1
     return grid 
     
 
@@ -33,22 +32,42 @@ def eval_candidate(grid, adj):
            if centre:
                if i > 0:
                    north = grid[i - 1][j]
-                   if north and adj[centre][north]:
-                       score += 1
+                   if north:
+                       score += adj[centre][north]
                if j < col_len - 1:
                    east = grid[i][j + 1]
-                   if east and adj[centre][east]:
-                       score += 1
+                   if east:
+                       score += adj[centre][east] 
                if i < row_len - 1:
                    south = grid[i + 1][j]
-                   if south and adj[centre][south]:
-                       score += 1
+                   if south:
+                       score += adj[centre][south]
                if j > 0:
                    west = grid[i][j - 1]
-                   if west and adj[centre][west]:
-                       score += 1
+                   if west:
+                       score += adj[centre][west]
     return score
 
+
+def eval_candidate_mod(grid, adj):
+    score = 0
+    row_len = len(grid)
+    col_len = len(grid[0])
+    for i in range(0, row_len):
+        row = grid[i]
+        for j in range(0, col_len):
+            c = row[j]
+            if not c: continue
+            n = grid[(i - 1) % row_len][j]
+            e = grid[i][(j + 1) % col_len]
+            s = grid[(i + 1) % row_len][j]
+            w = grid[i][(j - 1) % col_len]
+            if n: score += adj[c][n]
+            if e: score += adj[c][e]
+            if s: score += adj[c][s]
+            if w: score += adj[c][w]
+    return score
+ 
 
 def res_to_string(grid, regions):
     res = []
@@ -110,7 +129,7 @@ while True:
     grid[i1][j1] = grid[i2][j2]
     grid[i2][j2] = v
 
-    score = eval_candidate(grid, adj_matrix)
+    score = eval_candidate_mod(grid, adj_matrix)
 
     if score > max_score:
         last_max = max_score = score
