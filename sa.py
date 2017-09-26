@@ -151,7 +151,7 @@ while True:
             print(res_to_string(grid, regions))
             print('heat = {:.6f} best = {} current = {} '.format(t, max_score, score))
     else:
-        grid[i2][j2] = v1 
-        grid[i1][j1] = v2
+        grid[i2][j2] = v2 
+        grid[i1][j1] = v1
  
 
