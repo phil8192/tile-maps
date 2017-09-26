@@ -1,10 +1,11 @@
 import random
 import itertools
+import subprocess
 from read import load_conf
 
 
 def random_grid(regions, rows, cols):
-    grid = [[None]*rows for i in range(0, cols)]
+    grid = [[None]*cols for i in range(0, rows)]
     avail = list(itertools.product(range(0, rows), range(0, cols)))
     random.shuffle(avail)
     for k in range(0, len(regions)):
@@ -49,24 +50,55 @@ def eval_candidate(grid, adj):
     return score
 
 
+def res_to_string(grid, regions):
+    res = []
+    rows = len(grid)
+    cols = len(grid[0])
+    rs = []
+    for i in range(0, rows):
+        for j in range(0, cols):
+            ass = grid[i][j]
+            if ass is None:
+                ass_region = '   '
+            else:
+                ass_region = regions[ass]['s_name']    
+            rs.append('| {} '.format(ass_region))
+        rs.append('|')
+        rs = ''.join(rs)
+        res.append('-' * len(rs))
+        res.append('\n')
+        res.append(rs)
+        res.append('\n')
+        rs = []
+    res.append('-' * len(rs))
+    res.append('\n')
+    return ''.join(res)
+
 
 conf = load_conf('geojson/counties.geojson', 'Name')
 regions = conf['regions']
 neighbours = conf['neighbours']
-rows = cols = 10
+
+rows = 13
+cols = 20 
+#rows = 16 
+#cols = 32
 
 grid = random_grid(regions, rows, cols)
 adj_matrix = adjacency_matrix(neighbours, regions)
 
 last_max = max_score = eval_candidate(grid, adj_matrix)
 
-t = 1.0
+t = 1.0 
 a = 0.999999
 #t=0.001
 #a=1
 
+best_s = ''
+i = 0
 while True:
-    if t > 0.000001:
+    i = i+1
+    if t > 0.0001:
         t = t*a
 
     i1 = random.randint(0, rows - 1)
@@ -82,9 +114,17 @@ while True:
 
     if score > max_score:
         last_max = max_score = score
-        print(t, score)
+        best_s = res_to_string(grid, regions)
+        #subprocess.call('clear', shell=True) 
+        #print(best_s)
+        #print('heat = {:.6f} best = {}'.format(t, max_score))
     elif score > last_max or random.random() <= t:
         last_max = score
+        if i % 100 == 0:
+            subprocess.call('clear', shell=True)
+            print(best_s)
+            print(res_to_string(grid, regions))
+            print('heat = {:.6f} best = {} current = {} '.format(t, max_score, score))
     else:
         grid[i2][j2] = grid[i1][j1]
         grid[i1][j1] = v
