@@ -1,3 +1,4 @@
+import math
 import random
 import itertools
 import subprocess
@@ -94,12 +95,12 @@ def res_to_string(grid, regions):
     return ''.join(res)
 
 
-def acceptance_probability(current_state, new_state, temperature):
+def acceptance_probability(old_score, new_score, temperature=1):
     """the probability of accepting a candidate state.
 
-    1 if new_state - current_state > 0 (always accept an improvement.)
+    1 if new_score - old_score > 0 (always accept an improvement.)
 
-    [0,1] otherwise. according to: (new_state - current_state) / temperature.
+    [0,1] otherwise. according to: (new_score - old_score) / temperature.
 
     this means that with a fixed temperature (say 1000), less damaging moves are
     (exponentially) favoured over really bad moves:
@@ -118,11 +119,20 @@ def acceptance_probability(current_state, new_state, temperature):
     we want to further still inhibit disruptive moves.
     e.g.,
     exp(-1 / 10) ~= 0.9 > exp(-1 / 1)  ~= 0.36
-    
-    see https://en.wikipedia.org/wiki/Simulated_annealing#Acceptance_probabilities
+
+    without temperature, %prob. of selecting bad move = 
+
+    >>> ['{:.2f}'.format(100*math.exp(-x)) for x in range(1, 9)]
+    ['36.79', '13.53', '4.98', '1.83', '0.67', '0.25', '0.09', '0.03']  
+
+    -1 = no change in score. (sometimes accept sideways moves)
+    -2 = -1 change.. 
+
+    see:
+    https://en.wikipedia.org/wiki/Simulated_annealing#Acceptance_probabilities
     """
-    d = new_state - current_state
-    return 1 if d > 0 else math.exp(d / temperature)
+    d = new_score - old_score - 1
+    return 1 if d >= 0 else math.exp(d / temperature)
 
 
 conf = load_conf('geojson/counties.geojson', 'Name')
@@ -137,13 +147,32 @@ cols = 16
 grid = random_grid(regions, rows, cols)
 adj_matrix = adjacency_matrix(neighbours, regions)
 
-last_max = max_score = eval_candidate(grid, adj_matrix)
+old_score = best_score = eval_candidate(grid, adj_matrix)
 
-t = 0.05
+# highest possible score.
+max_score = len(neighbours) 
+
+# highest change (-+) in score possible from a single move (swaps)
+# can use this later to scale acceptance probability function. 
+max_move_score = 8
+
+
+#t = 0.05
+#a = 0.9999999
+
+
+# ['{:.9f}'.format(100*math.exp(-x/1)) for x in range(1, 9)]
+# ['36.787944117', '13.533528324', '4.978706837', '1.831563889', '0.673794700', '0.247875218', '0.091188197', '0.033546263']
+t = 1
+
+# cooling schedule
 a = 0.9999999
-#t=0.001
-#a=1
 
+# ['{:.9f}'.format(100*math.exp(-x/0.25)) for x in range(1, 9)]
+# ['1.831563889', '0.033546263', '0.000614421', '0.000011254', '0.000000206', '0.000000004', '0.000000000', '0.000000000']
+min_temp = 0.25
+
+print_every = 100
 best_s = ''
 i = 0
 while True:
@@ -160,29 +189,29 @@ while True:
     if not (v1 or v1): continue
 
     i = i+1
-    if t > 0.0001:
-        t = t*a
+    if t > min_temp: t = t*a
 
     grid[i1][j1] = v2
     grid[i2][j2] = v1
         
-    score = eval_candidate_mod(grid, adj_matrix)
+    new_score = eval_candidate_mod(grid, adj_matrix)
 
-    if score > max_score:
-        last_max = max_score = score
-        best_s = res_to_string(grid, regions)
-        #subprocess.call('clear', shell=True) 
-        #print(best_s)
-        #print('heat = {:.6f} best = {}'.format(t, max_score))
-    elif score > last_max or random.random() <= t:
-        last_max = score
-        if i % 100 == 0:
-            subprocess.call('clear', shell=True)
-            print(best_s)
-            print(res_to_string(grid, regions))
-            print('heat = {:.6f} best = {} current = {} '.format(t, max_score, score))
+    if acceptance_probability(old_score, new_score, t) >= random.random():
+        # accept the candidate move
+        old_score = new_score
+        if new_score > best_score:
+            # new maxima found
+            best_score = new_score
+            best_s = res_to_string(grid, regions)
+        else:
+            # exploring
+            if i % print_every == 0:
+                subprocess.call('clear', shell=True)
+                print(best_s)
+                print(res_to_string(grid, regions))
+                print('temperature = {:.6f} best = {} current = {} '.format(t, best_score, new_score))
     else:
-        grid[i2][j2] = v2 
+        # reject the candidate move
         grid[i1][j1] = v1
- 
-
+        grid[i2][j2] = v2
+   
