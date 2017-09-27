@@ -94,6 +94,37 @@ def res_to_string(grid, regions):
     return ''.join(res)
 
 
+def acceptance_probability(current_state, new_state, temperature):
+    """the probability of accepting a candidate state.
+
+    1 if new_state - current_state > 0 (always accept an improvement.)
+
+    [0,1] otherwise. according to: (new_state - current_state) / temperature.
+
+    this means that with a fixed temperature (say 1000), less damaging moves are
+    (exponentially) favoured over really bad moves:
+
+    p = [ exp(0), exp(-inf) ) ..
+    e.g.,
+    exp(-1) ~= 0.368 > exp(-5) ~= 0.0067
+    
+    note that moves resulting in a < -5 loss in objective score are highly
+    unlikely: this can be scaled..
+
+    initially, with maximum temperature, we allow for disruptive moves, although
+    still favour least disruptive. 
+
+    as the temperature decreases over time, according to some cooling schedule,
+    we want to further still inhibit disruptive moves.
+    e.g.,
+    exp(-1 / 10) ~= 0.9 > exp(-1 / 1)  ~= 0.36
+    
+    see https://en.wikipedia.org/wiki/Simulated_annealing#Acceptance_probabilities
+    """
+    d = new_state - current_state
+    return 1 if d > 0 else math.exp(d / temperature)
+
+
 conf = load_conf('geojson/counties.geojson', 'Name')
 regions = conf['regions']
 neighbours = conf['neighbours']
@@ -108,8 +139,8 @@ adj_matrix = adjacency_matrix(neighbours, regions)
 
 last_max = max_score = eval_candidate(grid, adj_matrix)
 
-t = 1.0 
-a = 0.999999
+t = 0.05
+a = 0.9999999
 #t=0.001
 #a=1
 
