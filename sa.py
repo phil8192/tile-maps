@@ -1,7 +1,11 @@
+import copy
 import math
 import random
 import itertools
 import subprocess
+import ascii_graph
+import termcolor
+
 from read import load_conf
 
 
@@ -70,7 +74,7 @@ def eval_candidate_mod(grid, adj):
     return score
  
 
-def res_to_string(grid, regions):
+def res_to_string(grid, regions, fg='white', bg='on_blue', fill='on_blue'):
     res = []
     rows = len(grid)
     cols = len(grid[0])
@@ -79,19 +83,21 @@ def res_to_string(grid, regions):
         for j in range(0, cols):
             ass = grid[i][j]
             if ass is None:
-                ass_region = '   '
+                #rs.append('    ')
+                rs.append(' ')
+                rs.append(termcolor.colored('   ', fg, fill))
             else:
-                ass_region = regions[ass]['s_name']    
-            rs.append('| {} '.format(ass_region))
-        rs.append('|')
+                rs.append(' ')
+                rs.append(termcolor.colored(regions[ass]['s_name'], fg, bg, attrs=['bold']))
+        #rs.append(' ')
         rs = ''.join(rs)
-        res.append('-' * len(rs))
+        #res.append(' ' * len(rs))
         res.append('\n')
         res.append(rs)
         res.append('\n')
         rs = []
-    res.append('-' * len(rs))
-    res.append('\n')
+    #res.append(' ' * len(rs))
+    #res.append('\n')
     return ''.join(res)
 
 
@@ -162,26 +168,38 @@ max_score = len(neighbours)
 # can use this later to scale acceptance probability function. 
 max_move_score = 8
 
-
 #t = 0.05
 #a = 0.9999999
 
-
 # ['{:.9f}'.format(100*math.exp(-x/1)) for x in range(1, 9)]
 # ['36.787944117', '13.533528324', '4.978706837', '1.831563889', '0.673794700', '0.247875218', '0.091188197', '0.033546263']
-t = 1
+t = 0.5
 
 # cooling schedule
-a = 0.9999999
+a = 0.99999999
 
-# ['{:.9f}'.format(100*math.exp(-x/0.25)) for x in range(1, 9)]
-# ['1.831563889', '0.033546263', '0.000614421', '0.000011254', '0.000000206', '0.000000004', '0.000000000', '0.000000000']
-min_temp = 0.25
+# ['{:.9f}'.format(100*math.exp(-x/0.3)) for x in range(1, 9)]
+# ['3.567399335', '0.127263380', '0.004539993', '0.000161960', '0.000005778', '0.000000206', '0.000000007', '0.000000000']
+min_temp = 0.3
+
+# stash best result for final output + restarts.
+best_grid = None
+restarts = 0
 
 print_every = 100
 best_s = ''
 i = 0
 while True:
+
+    # check if we should restart
+    # https://en.wikipedia.org/wiki/Simulated_annealing#Restarts
+    if best_score - old_score > 20:
+        # we have deviated too far from a good solution..
+        grid = copy.deepcopy(best_grid)
+        old_score = best_score
+        restarts += 1
+        # and also restart the cooling schedule?
+
 
     i1 = random.randint(0, rows - 1)
     j1 = random.randint(0, cols - 1)
@@ -209,16 +227,23 @@ while True:
         if new_score > best_score:
             # new maxima found
             best_score = new_score
-            best_s = res_to_string(grid, regions)
+            best_s = res_to_string(grid, regions, 'white', 'on_blue', 'on_grey')
+            best_grid = copy.deepcopy(grid)
         else:
             # exploring
             if i % print_every == 0:
                 subprocess.call('clear', shell=True)
                 print(best_s)
-                print(res_to_string(grid, regions))
-                print('temperature = {:.6f} best = {} current = {} '.format(t, best_score, new_score))
+                #termcolor.cprint(best_s, 'red', 'on_white')
+                print(res_to_string(grid, regions, 'cyan', 'on_grey', 'on_grey'))
+                print('temperature = {:.6f} state restarts = {}'.format(t, restarts))
+                graph_data = [('best result', best_score), ('current result', new_score)]
+                for g in ascii_graph.Pyasciigraph(force_max_value=max_score).graph(data=graph_data):
+                    print(g)
+                
     else:
         # reject the candidate move
         grid[i1][j1] = v1
         grid[i2][j2] = v2
    
+
