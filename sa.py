@@ -192,7 +192,8 @@ while True:
     v2 = grid[i2][j2]
 
     # dont swap empty positions...    
-    if not (v1 or v1): continue
+    if v1 is None and v1 is None:
+        continue
 
     i = i+1
     if t > min_temp: t = t*a
