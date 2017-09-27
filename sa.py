@@ -58,7 +58,7 @@ def eval_candidate_mod(grid, adj):
         row = grid[i]
         for j in range(0, col_len):
             c = row[j]
-            if not c: continue
+            if c is None: continue
             n = grid[(i - 1) % row_len][j]
             e = grid[i][(j + 1) % col_len]
             s = grid[(i + 1) % row_len][j]
@@ -146,6 +146,12 @@ cols = 16
 
 grid = random_grid(regions, rows, cols)
 adj_matrix = adjacency_matrix(neighbours, regions)
+
+#import sys
+#import pprint
+#pprint.pprint(conf)
+#print(adj_matrix)
+#sys.exit(0)
 
 old_score = best_score = eval_candidate(grid, adj_matrix)
 
