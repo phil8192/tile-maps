@@ -141,12 +141,12 @@ def acceptance_probability(old_score, new_score, temperature=1):
     return 1 if d >= 0 else math.exp(d / temperature)
 
 
-conf = load_conf('geojson/counties.geojson', 'Name')
+conf = load_conf('geojson/countries.geojson', 'name')
 regions = conf['regions']
 neighbours = conf['neighbours']
 
-rows = 13
-cols = 16 
+rows = 14
+cols = 32 
 #rows = 16 
 #cols = 32
 
