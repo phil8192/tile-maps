@@ -141,14 +141,16 @@ def acceptance_probability(old_score, new_score, temperature=1):
     return 1 if d >= 0 else math.exp(d / temperature)
 
 
-conf = load_conf('geojson/countries.geojson', 'name')
+#conf = load_conf('geojson/us.geojson', 'NAME')
+conf = load_conf('geojson/constituencies.geojson', 'pcon16nm')
+
 regions = conf['regions']
 neighbours = conf['neighbours']
 
-rows = 14
-cols = 32 
-#rows = 16 
-#cols = 32
+#rows = 13
+#cols = 16 
+rows = 27 
+cols = 45
 
 grid = random_grid(regions, rows, cols)
 adj_matrix = adjacency_matrix(neighbours, regions)
@@ -173,7 +175,7 @@ max_move_score = 8
 
 # ['{:.9f}'.format(100*math.exp(-x/1)) for x in range(1, 9)]
 # ['36.787944117', '13.533528324', '4.978706837', '1.831563889', '0.673794700', '0.247875218', '0.091188197', '0.033546263']
-t = 0.5
+t = 0.6
 
 # cooling schedule
 a = 0.99999999
@@ -235,7 +237,7 @@ while True:
                 subprocess.call('clear', shell=True)
                 print(best_s)
                 #termcolor.cprint(best_s, 'red', 'on_white')
-                print(res_to_string(grid, regions, 'cyan', 'on_grey', 'on_grey'))
+                #print(res_to_string(grid, regions, 'cyan', 'on_grey', 'on_grey'))
                 print('temperature = {:.6f} state restarts = {}'.format(t, restarts))
                 graph_data = [('best result', best_score), ('current result', new_score)]
                 for g in ascii_graph.Pyasciigraph(force_max_value=max_score).graph(data=graph_data):
