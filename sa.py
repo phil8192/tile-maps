@@ -39,22 +39,17 @@ def eval_position(grid, adj, i, j):
     score = 0
     c = grid[i][j]
     if c is not None:
-        n, e, s, w = cell_neighbours(grid, i, j)
+        row_len = len(grid)
+        col_len = len(grid[0])
+        n = grid[(i - 1) % row_len][j]
+        e = grid[i][(j + 1) % col_len]
+        s = grid[(i + 1) % row_len][j]
+        w = grid[i][(j - 1) % col_len]
         if n is not None: score += adj[c][n]
         if e is not None: score += adj[c][e]
         if s is not None: score += adj[c][s]
         if w is not None: score += adj[c][w]
     return score
-
-
-def cell_neighbours(grid, i, j):
-    row_len = len(grid)
-    col_len = len(grid[0])
-    n = grid[(i - 1) % row_len][j]
-    e = grid[i][(j + 1) % col_len]
-    s = grid[(i + 1) % row_len][j]
-    w = grid[i][(j - 1) % col_len]
-    return (n, e, s, w)
 
 
 def res_to_string(grid, regions, fg='white', bg='on_blue', fill='on_blue'):
@@ -128,16 +123,17 @@ import cProfile
 pr = cProfile.Profile()
 pr.enable()
 
+conf = load_conf('geojson/counties.geojson', 'Name')
 #conf = load_conf('geojson/us.geojson', 'NAME')
-conf = load_conf('geojson/constituencies.geojson', 'pcon16nm')
+#conf = load_conf('geojson/constituencies.geojson', 'pcon16nm')
 
 regions = conf['regions']
 neighbours = conf['neighbours']
 
-#rows = 13
-#cols = 16 
-rows = 27 
-cols = 45
+rows = 13
+cols = 16 
+#rows = 27 
+#cols = 45
 
 grid = random_grid(regions, rows, cols)
 adj_matrix = adjacency_matrix(neighbours, regions)
@@ -153,19 +149,15 @@ old_score = best_score = eval_candidate_mod(grid, adj_matrix)
 # highest possible score.
 max_score = len(neighbours) 
 
-# highest change (-+) in score possible from a single move (swaps)
-# can use this later to scale acceptance probability function. 
-max_move_score = 8
-
 #t = 0.05
 #a = 0.9999999
 
 # ['{:.9f}'.format(100*math.exp(-x/1)) for x in range(1, 9)]
 # ['36.787944117', '13.533528324', '4.978706837', '1.831563889', '0.673794700', '0.247875218', '0.091188197', '0.033546263']
-t = 0.55
+t = 0.6
 
 # cooling schedule
-a = 0.99999999
+a = 0.999999999
 
 # ['{:.9f}'.format(100*math.exp(-x/0.3)) for x in range(1, 9)]
 # ['3.567399335', '0.127263380', '0.004539993', '0.000161960', '0.000005778', '0.000000206', '0.000000007', '0.000000000']
@@ -174,13 +166,13 @@ min_temp = 0.3
 # stash best result for final output + restarts.
 best_grid = None
 restarts = 0
-restart_limit = 50 
+restart_limit = 20 
 
 print_every = 100
 best_s = ''
 i = 0
-#while True:
-for _ in range(0, 1000000): 
+#while 1:
+for _ in range(0, 10000000): 
     # check if we should restart
     # https://en.wikipedia.org/wiki/Simulated_annealing#Restarts
     if best_score - old_score > restart_limit:
@@ -228,8 +220,7 @@ for _ in range(0, 1000000):
             if i % print_every == 0:
                 subprocess.call('clear', shell=True)
                 print(best_s)
-                #termcolor.cprint(best_s, 'red', 'on_white')
-                #print(res_to_string(grid, regions, 'cyan', 'on_grey', 'on_grey'))
+                print(res_to_string(grid, regions, 'cyan', 'on_grey', 'on_grey'))
                 print('temperature = {:.6f} state restarts = {}'.format(t, restarts))
                 graph_data = [('best result', best_score), ('current result', new_score)]
                 for g in ascii_graph.Pyasciigraph(force_max_value=max_score).graph(data=graph_data):
