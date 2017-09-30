@@ -23,56 +23,39 @@ def adjacency_matrix(neighbour_tuples, regions):
     grid = [[0]*len(regions) for i in range(0, len(regions))]
     for i, j in neighbour_tuples:
         grid[i][j] = 1
+        grid[j][i] = 1
     return grid 
     
 
-def eval_candidate(grid, adj):
-    score = 0
-    row_len = len(grid)
-    col_len = len(grid[0])
-    for i in range(0, row_len):
-        row = grid[i]
-        for j in range(0, col_len):
-           centre = row[j] 
-           if centre:
-               if i > 0:
-                   north = grid[i - 1][j]
-                   if north:
-                       score += adj[centre][north]
-               if j < col_len - 1:
-                   east = grid[i][j + 1]
-                   if east:
-                       score += adj[centre][east] 
-               if i < row_len - 1:
-                   south = grid[i + 1][j]
-                   if south:
-                       score += adj[centre][south]
-               if j > 0:
-                   west = grid[i][j - 1]
-                   if west:
-                       score += adj[centre][west]
-    return score
-
-
 def eval_candidate_mod(grid, adj):
     score = 0
+    for i in range(0, len(grid)):
+        for j in range(0, len(grid[0])):
+            score += eval_position(grid, adj, i, j)
+    return score
+
+
+def eval_position(grid, adj, i, j):
+    score = 0
+    c = grid[i][j]
+    if c is not None:
+        n, e, s, w = cell_neighbours(grid, i, j)
+        if n is not None: score += adj[c][n]
+        if e is not None: score += adj[c][e]
+        if s is not None: score += adj[c][s]
+        if w is not None: score += adj[c][w]
+    return score
+
+
+def cell_neighbours(grid, i, j):
     row_len = len(grid)
     col_len = len(grid[0])
-    for i in range(0, row_len):
-        row = grid[i]
-        for j in range(0, col_len):
-            c = row[j]
-            if c is None: continue
-            n = grid[(i - 1) % row_len][j]
-            e = grid[i][(j + 1) % col_len]
-            s = grid[(i + 1) % row_len][j]
-            w = grid[i][(j - 1) % col_len]
-            if n: score += adj[c][n]
-            if e: score += adj[c][e]
-            if s: score += adj[c][s]
-            if w: score += adj[c][w]
-    return score
- 
+    n = grid[(i - 1) % row_len][j]
+    e = grid[i][(j + 1) % col_len]
+    s = grid[(i + 1) % row_len][j]
+    w = grid[i][(j - 1) % col_len]
+    return (n, e, s, w)
+
 
 def res_to_string(grid, regions, fg='white', bg='on_blue', fill='on_blue'):
     res = []
@@ -141,6 +124,10 @@ def acceptance_probability(old_score, new_score, temperature=1):
     return 1 if d >= 0 else math.exp(d / temperature)
 
 
+import cProfile
+pr = cProfile.Profile()
+pr.enable()
+
 #conf = load_conf('geojson/us.geojson', 'NAME')
 conf = load_conf('geojson/constituencies.geojson', 'pcon16nm')
 
@@ -161,7 +148,7 @@ adj_matrix = adjacency_matrix(neighbours, regions)
 #print(adj_matrix)
 #sys.exit(0)
 
-old_score = best_score = eval_candidate(grid, adj_matrix)
+old_score = best_score = eval_candidate_mod(grid, adj_matrix)
 
 # highest possible score.
 max_score = len(neighbours) 
@@ -175,7 +162,7 @@ max_move_score = 8
 
 # ['{:.9f}'.format(100*math.exp(-x/1)) for x in range(1, 9)]
 # ['36.787944117', '13.533528324', '4.978706837', '1.831563889', '0.673794700', '0.247875218', '0.091188197', '0.033546263']
-t = 0.6
+t = 0.55
 
 # cooling schedule
 a = 0.99999999
@@ -187,15 +174,16 @@ min_temp = 0.3
 # stash best result for final output + restarts.
 best_grid = None
 restarts = 0
+restart_limit = 50 
 
 print_every = 100
 best_s = ''
 i = 0
-while True:
-
+#while True:
+for _ in range(0, 1000000): 
     # check if we should restart
     # https://en.wikipedia.org/wiki/Simulated_annealing#Restarts
-    if best_score - old_score > 20:
+    if best_score - old_score > restart_limit:
         # we have deviated too far from a good solution..
         grid = copy.deepcopy(best_grid)
         old_score = best_score
@@ -208,8 +196,12 @@ while True:
     i2 = random.randint(0, rows - 1)
     j2 = random.randint(0, cols - 1)
 
+    new_score = old_score
+
     v1 = grid[i1][j1]
     v2 = grid[i2][j2]
+    new_score -= eval_position(grid, adj_matrix, i1, j1)
+    new_score -= eval_position(grid, adj_matrix, i2, j2)
 
     # dont swap empty positions...    
     if v1 is None and v1 is None:
@@ -220,8 +212,8 @@ while True:
 
     grid[i1][j1] = v2
     grid[i2][j2] = v1
-        
-    new_score = eval_candidate_mod(grid, adj_matrix)
+    new_score += eval_position(grid, adj_matrix, i1, j1)
+    new_score += eval_position(grid, adj_matrix, i2, j2)
 
     if acceptance_probability(old_score, new_score, t) >= random.random():
         # accept the candidate move
@@ -249,3 +241,6 @@ while True:
         grid[i2][j2] = v2
    
 
+
+pr.disable()
+pr.print_stats(sort='time')
