@@ -35,6 +35,7 @@ def eval_candidate_mod(grid, adj):
     return score
 
 
+# hotspot
 def eval_position(grid, adj, i, j):
     score = 0
     c = grid[i][j]
@@ -171,6 +172,9 @@ restart_limit = 20
 print_every = 100
 best_s = ''
 i = 0
+
+last_cell = rows*cols - 1 
+
 #while 1:
 for _ in range(0, 10000000): 
     # check if we should restart
@@ -183,10 +187,11 @@ for _ in range(0, 10000000):
         # and also restart the cooling schedule?
 
 
-    i1 = random.randint(0, rows - 1)
-    j1 = random.randint(0, cols - 1)
-    i2 = random.randint(0, rows - 1)
-    j2 = random.randint(0, cols - 1)
+    r1 = random.randint(0, last_cell)
+    r2 = random.randint(0, last_cell)
+    i1, j1 = r1 // cols, r1 % cols
+    i2, j2 = r2 // cols, r2 % cols
+
 
     new_score = old_score
 
