@@ -5,6 +5,7 @@ import itertools
 import subprocess
 import ascii_graph
 import termcolor
+from numba import jit
 
 from read import load_conf
 
@@ -17,6 +18,7 @@ def random_grid(regions, rows, cols):
         i, j = avail.pop()
         grid[i][j] = k
     return grid
+
 
 
 def adjacency_matrix(neighbour_tuples, regions):
@@ -80,6 +82,7 @@ def res_to_string(grid, regions, fg='white', bg='on_blue', fill='on_blue'):
     return ''.join(res)
 
 
+@jit
 def acceptance_probability(old_score, new_score, temperature=1):
     """the probability of accepting a candidate state.
 
@@ -119,124 +122,128 @@ def acceptance_probability(old_score, new_score, temperature=1):
     d = new_score - old_score - 1
     return 1 if d >= 0 else math.exp(d / temperature)
 
-
-import cProfile
-pr = cProfile.Profile()
-pr.enable()
-
-conf = load_conf('geojson/counties.geojson', 'Name')
-#conf = load_conf('geojson/us.geojson', 'NAME')
-#conf = load_conf('geojson/constituencies.geojson', 'pcon16nm')
-
-regions = conf['regions']
-neighbours = conf['neighbours']
-
-rows = 13
-cols = 16 
-#rows = 27 
-#cols = 45
-
-grid = random_grid(regions, rows, cols)
-adj_matrix = adjacency_matrix(neighbours, regions)
-
-#import sys
-#import pprint
-#pprint.pprint(conf)
-#print(adj_matrix)
-#sys.exit(0)
-
-old_score = best_score = eval_candidate_mod(grid, adj_matrix)
-
-# highest possible score.
-max_score = len(neighbours) 
-
-#t = 0.05
-#a = 0.9999999
-
-# ['{:.9f}'.format(100*math.exp(-x/1)) for x in range(1, 9)]
-# ['36.787944117', '13.533528324', '4.978706837', '1.831563889', '0.673794700', '0.247875218', '0.091188197', '0.033546263']
-t = 0.6
-
-# cooling schedule
-a = 0.999999999
-
-# ['{:.9f}'.format(100*math.exp(-x/0.3)) for x in range(1, 9)]
-# ['3.567399335', '0.127263380', '0.004539993', '0.000161960', '0.000005778', '0.000000206', '0.000000007', '0.000000000']
-min_temp = 0.3
-
-# stash best result for final output + restarts.
-best_grid = None
-restarts = 0
-restart_limit = 20 
-
-print_every = 100
-best_s = ''
-i = 0
-
-last_cell = rows*cols - 1 
-
-#while 1:
-for _ in range(0, 10000000): 
-    # check if we should restart
-    # https://en.wikipedia.org/wiki/Simulated_annealing#Restarts
-    if best_score - old_score > restart_limit:
-        # we have deviated too far from a good solution..
-        grid = copy.deepcopy(best_grid)
-        old_score = best_score
-        restarts += 1
-        # and also restart the cooling schedule?
+# core random and numpy random really slow.
+@jit
+def random_int(max_int):
+    return random.randint(0, max_int)
 
 
-    r1 = random.randint(0, last_cell)
-    r2 = random.randint(0, last_cell)
-    i1, j1 = r1 // cols, r1 % cols
-    i2, j2 = r2 // cols, r2 % cols
+def optimise():
+
+    conf = load_conf('geojson/counties.geojson', 'Name')
+    #conf = load_conf('geojson/us.geojson', 'NAME')
+    #conf = load_conf('geojson/constituencies.geojson', 'pcon16nm')
+
+    regions = conf['regions']
+    neighbours = conf['neighbours']
+
+    rows = 13
+    cols = 16 
+    #rows = 27 
+    #cols = 45
+
+    grid = random_grid(regions, rows, cols)
+    adj_matrix = adjacency_matrix(neighbours, regions)
 
 
-    new_score = old_score
+    old_score = best_score = eval_candidate_mod(grid, adj_matrix)
 
-    v1 = grid[i1][j1]
-    v2 = grid[i2][j2]
-    new_score -= eval_position(grid, adj_matrix, i1, j1)
-    new_score -= eval_position(grid, adj_matrix, i2, j2)
+    # highest possible score.
+    max_score = len(neighbours) 
 
-    # dont swap empty positions...    
-    if v1 is None and v1 is None:
-        continue
+    #t = 0.05
+    #a = 0.9999999
 
-    i = i+1
-    if t > min_temp: t = t*a
+    # ['{:.9f}'.format(100*math.exp(-x/1)) for x in range(1, 9)]
+    # ['36.787944117', '13.533528324', '4.978706837', '1.831563889', '0.673794700', '0.247875218', '0.091188197', '0.033546263']
+    t = 0.6
 
-    grid[i1][j1] = v2
-    grid[i2][j2] = v1
-    new_score += eval_position(grid, adj_matrix, i1, j1)
-    new_score += eval_position(grid, adj_matrix, i2, j2)
+    # cooling schedule
+    a = 0.999999999
 
-    if acceptance_probability(old_score, new_score, t) >= random.random():
-        # accept the candidate move
-        old_score = new_score
-        if new_score > best_score:
-            # new maxima found
-            best_score = new_score
-            best_s = res_to_string(grid, regions, 'white', 'on_blue', 'on_grey')
-            best_grid = copy.deepcopy(grid)
-        else:
-            # exploring
-            if i % print_every == 0:
-                subprocess.call('clear', shell=True)
-                print(best_s)
-                print(res_to_string(grid, regions, 'cyan', 'on_grey', 'on_grey'))
-                print('temperature = {:.6f} state restarts = {}'.format(t, restarts))
-                graph_data = [('best result', best_score), ('current result', new_score)]
-                for g in ascii_graph.Pyasciigraph(force_max_value=max_score).graph(data=graph_data):
-                    print(g)
+    # ['{:.9f}'.format(100*math.exp(-x/0.3)) for x in range(1, 9)]
+    # ['3.567399335', '0.127263380', '0.004539993', '0.000161960', '0.000005778', '0.000000206', '0.000000007', '0.000000000']
+    min_temp = 0.3
+
+    # stash best result for final output + restarts.
+    best_grid = None
+    restarts = 0
+    restart_limit = 20 
+
+    print_every = 100
+    best_s = ''
+    i = 0
+
+    last_cell = rows*cols - 1 
+
+
+
+    #while 1:
+    for _ in range(0, 10000000): 
+        # check if we should restart
+        # https://en.wikipedia.org/wiki/Simulated_annealing#Restarts
+        if best_score - old_score > restart_limit:
+            # we have deviated too far from a good solution..
+            grid = copy.deepcopy(best_grid)
+            old_score = best_score
+            restarts += 1
+            # and also restart the cooling schedule?
+
+        r1 = random_int(last_cell)
+        r2 = random_int(last_cell)
+        i1, j1 = r1 // cols, r1 % cols
+        i2, j2 = r2 // cols, r2 % cols
+
+
+        new_score = old_score
+
+        v1 = grid[i1][j1]
+        v2 = grid[i2][j2]
+        new_score -= eval_position(grid, adj_matrix, i1, j1)
+        new_score -= eval_position(grid, adj_matrix, i2, j2)
+
+        # dont swap empty positions...    
+        if v1 is None and v1 is None:
+            continue
+
+        i = i+1
+        if t > min_temp: t = t*a
+
+        grid[i1][j1] = v2
+        grid[i2][j2] = v1
+        new_score += eval_position(grid, adj_matrix, i1, j1)
+        new_score += eval_position(grid, adj_matrix, i2, j2)
+
+        if acceptance_probability(old_score, new_score, t) >= random.random():
+            # accept the candidate move
+            old_score = new_score
+            if new_score > best_score:
+                # new maxima found
+                best_score = new_score
+                best_s = res_to_string(grid, regions, 'white', 'on_blue', 'on_grey')
+                best_grid = copy.deepcopy(grid)
+            else:
+                # exploring
+                if i % print_every == 0:
+                    subprocess.call('clear', shell=True)
+                    print(best_s)
+                    print(res_to_string(grid, regions, 'cyan', 'on_grey', 'on_grey'))
+                    print('temperature = {:.6f} state restarts = {}'.format(t, restarts))
+                    graph_data = [('best result', best_score), ('current result', new_score)]
+                    for g in ascii_graph.Pyasciigraph(force_max_value=max_score).graph(data=graph_data):
+                        print(g)
                 
-    else:
-        # reject the candidate move
-        grid[i1][j1] = v1
-        grid[i2][j2] = v2
+        else:
+            # reject the candidate move
+            grid[i1][j1] = v1
+            grid[i2][j2] = v2
    
 
+#import cProfile
+#pr = cProfile.Profile()
+#pr.enable()
 
-pr.disable()
-pr.print_stats(sort='time')
+optimise()
+
+#pr.disable()
+#pr.print_stats(sort='time')
