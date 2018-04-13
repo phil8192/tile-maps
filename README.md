@@ -163,9 +163,3 @@ verify parallel enabled
 cbc -threads 8 -unitTest -dirMiplib=_MIPLIB3DIR_ -miplib
 ```
 
-
-readme
-
-```
-sudo pip install readme2tex
-```
