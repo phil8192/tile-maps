@@ -163,3 +163,12 @@ verify parallel enabled
 cbc -threads 8 -unitTest -dirMiplib=_MIPLIB3DIR_ -miplib
 ```
 
+
+first
+
+![test-0](test-0.png)
+
+second
+
+![test-1](test-1.png)
+
