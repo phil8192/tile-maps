@@ -1,4 +1,4 @@
-# use pulp - a python abstraction layer for linear programming modeling. 
+# use pulp - a python abstraction layer for linear programming modeling.
 import multiprocessing
 import math
 from pulp import *
@@ -6,7 +6,7 @@ from util import load_conf
 
 
 #conf = load_conf('geojson/countries.geojson', 'ctry16nm')
-conf = load_conf('geojson/regions.geojson', 'rgn16nm')
+conf = load_conf('../geojson/regions.geojson', 'rgn16nm')
 #conf = load_conf('geojson/counties.geojson', 'Name')
 
 regions = len(conf['regions'])
@@ -21,7 +21,7 @@ model += lpSum(neighbours.values())
 # subject to...
 
 # all possibl8e assignments for regions to cells matrix.
-rows = cols = 10 
+rows = cols = 10
 keys = itertools.product(range(0, rows), range(0, cols), range(0, regions))
 cell_assignments = {k: LpVariable(cat=LpBinary, name='ASS_{}_{}_{}'.format(*k)) for k in keys}
 #for _, ass in cell_assignments.items():
@@ -75,7 +75,7 @@ for k, v in neighbours.items():
 # output the model in CPLEX LP format. (for verification/debugging)
 # note that this can be solved with GNU Linear Programming Kit) for example,
 # by doing:
-# 
+#
 # glpsol --lp tiles.lp
 model.writeLP('tiles.lp')
 
